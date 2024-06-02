@@ -7,7 +7,6 @@ export const GlobalStyles = globalCss({
     margin: 0,
     padding: 0,
     boxSizing: "border-box",
-    fontFamily: "Poppins",
     "::-webkit-scrollbar": {
       backgroundColor: "$scrollbar",
       width: "7px",
@@ -28,15 +27,6 @@ export const GlobalStyles = globalCss({
     height: "100%",
   },
 
-  body: {
-    width: "100vw",
-    height: "100vh",
-    fontFamily: "Arial, Helvetica, sans-serif",
-    backgroundColor: "$body",
-    overflow: "hidden",
-    position: "fixed",
-  },
-
   ".pallet": {
     color: "$pallet",
   },
@@ -48,6 +38,12 @@ export const GlobalStyles = globalCss({
   "button:disabled": {
     cursor: "not-allowed",
     opacity: 0.5,
+  },
+
+  h1: {
+    fontSize: 24,
+    fontWeight: 600,
+    color: "$pallet",
   },
 
   "input:-webkit-autofill, textarea:-webkit-autofill, select:-webkit-autofill":
