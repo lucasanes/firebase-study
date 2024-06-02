@@ -1,7 +1,8 @@
-import { GlobalStyles } from "@/styles/global";
+import { GlobalStyles } from "../styles/global";
 import type { Metadata } from "next";
 import "../styles/globals.css";
 import { Providers } from "./providers";
+import Head from "next/head";
 
 export const metadata: Metadata = {
   title: "Mapas Mentais - Direito",
@@ -15,11 +16,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-br" className="dark">
-      <body>
-        <Providers>
-          <GlobalStyles />
-          {children}
-        </Providers>
+      <body
+        style={{
+          height: "100vh",
+          width: "100vw",
+          overflow: "hidden",
+          position: "fixed",
+        }}
+      >
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
