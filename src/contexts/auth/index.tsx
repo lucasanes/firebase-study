@@ -1,77 +1,44 @@
-/* eslint-disable react-refresh/only-export-components */
+"use client";
+
+import { User } from "firebase/auth";
 import { createContext, useContext, useEffect, useState } from "react";
-import { useCookies } from "react-cookie";
-import { api } from "../../services/api.js";
-import { AuthContextProps, DataProps, User } from "./types.js";
+import { auth } from "../../../firebase.config";
+
+interface AuthContextProps {
+  signOut: () => void;
+  user: User;
+  token: string;
+}
+
+interface DataProps {
+  user: User;
+  token: string;
+}
 
 const AuthContext = createContext<AuthContextProps>({} as AuthContextProps);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState<DataProps>({} as DataProps);
 
-  const [cookies, setCookie, removeCookie] = useCookies(["@sigeve:token"]);
-
-  function signIn(user: User, token: string, rememberMe: boolean) {
-    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    setData({
-      user: user,
-      token: token,
-    });
-
-    if (rememberMe) {
-      setCookie("@sigeve:token", token, { path: "/" });
-    } else {
-      sessionStorage.setItem("@sigeve:token", token);
-    }
-  }
-
   function signOut() {
-    removeCookie("@sigeve:token");
-    sessionStorage.removeItem("@sigeve:token");
-
-    window.location.replace("/");
-
-    setData({ user: null, token: null });
+    auth.signOut();
+    setData({} as DataProps);
   }
 
   useEffect(() => {
-    let token: string | null = null;
-
-    if (cookies["@sigeve:token"]) {
-      token = cookies["@sigeve:token"];
-    } else {
-      token = sessionStorage.getItem("@sigeve:token");
-    }
-
-    async function fetchData() {
-      try {
-        const response = await api.get(`/api/usuarios/validar/${token}`);
-
-        if (response.data.token) {
-          api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-          setData({
-            user: response.data.user,
-            token: response.data.token,
-          });
-        } else {
-          signOut();
-        }
-      } catch (e) {
-        signOut();
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        setData({
+          user: user,
+          token: user.refreshToken,
+        });
       }
-    }
-
-    if (token) {
-      fetchData();
-    } else {
-      setData({ user: null, token: null });
-    }
+    });
   }, []);
 
   return (
     <AuthContext.Provider
       value={{
-        signIn,
         signOut,
         user: data?.user,
         token: data?.token,
