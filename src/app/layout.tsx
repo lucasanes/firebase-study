@@ -1,12 +1,10 @@
-import { GlobalStyles } from "../styles/global";
 import type { Metadata } from "next";
 import "../styles/globals.css";
 import { Providers } from "./providers";
-import Head from "next/head";
 
 export const metadata: Metadata = {
-  title: "Mapas Mentais - Direito",
-  description: "Mapas Mentais para Faculdade de Direito",
+  title: "Firebase Study",
+  description: "Estudo Geral Firebase",
 };
 
 export default function RootLayout({
