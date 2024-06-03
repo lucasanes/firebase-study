@@ -1,22 +1,15 @@
 "use client";
 
-import {
-  Button,
-  CardBody,
-  CardFooter,
-  CardHeader,
-  Input,
-} from "@nextui-org/react";
-import * as S from "./styles";
-import Link from "next/link";
 import PasswordInput from "@/components/passwordInput";
-import { MdOutlineEmail } from "react-icons/md";
-import { useState } from "react";
-import { useRouter } from "next/router";
+import { Button, CardFooter, CardHeader, Input } from "@nextui-org/react";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { auth } from "../../../../firebase.config";
-import { toast } from "react-toastify";
+import Link from "next/link";
+import { useState } from "react";
 import { BiUserCheck } from "react-icons/bi";
+import { MdOutlineEmail } from "react-icons/md";
+import { toast } from "react-toastify";
+import { auth } from "../../../../firebase.config";
+import * as S from "./styles";
 
 export default function Home() {
   const [name, setName] = useState("");

@@ -1,29 +1,28 @@
 "use client";
 
+import PasswordInput from "@/components/passwordInput";
 import {
   Button,
-  CardBody,
   CardFooter,
   CardHeader,
   Checkbox,
   Input,
 } from "@nextui-org/react";
-import * as S from "./styles";
-import Link from "next/link";
-import PasswordInput from "@/components/passwordInput";
-import { MdOutlineEmail } from "react-icons/md";
-import { useState } from "react";
-import { useRouter } from "next/router";
 import {
-  createUserWithEmailAndPassword,
+  browserLocalPersistence,
+  browserSessionPersistence,
   signInWithEmailAndPassword,
-  updateProfile,
 } from "firebase/auth";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { MdOutlineEmail } from "react-icons/md";
 import { auth } from "../../../../firebase.config";
-import { toast } from "react-toastify";
-import { BiUserCheck } from "react-icons/bi";
+import * as S from "./styles";
 
 export default function Home() {
+  const { push } = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -44,17 +43,22 @@ export default function Home() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
+    if (rememberMe) {
+      auth.setPersistence(browserLocalPersistence);
+    } else {
+      auth.setPersistence(browserSessionPersistence);
+    }
+
     signInWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
         const user = userCredential.user;
-
-        toast.success(`Bem vindo, ${user.displayName}`);
-
+        push("/home");
         console.log(user);
       })
       .catch((error) => {
-        toast.error("Email ou senha incorretos.");
-        console.log(`Error: ${error.code} - ${error.message}`);
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        console.log(`Erro: ${errorCode} - ${errorMessage}`);
       });
   }
 
@@ -102,7 +106,7 @@ export default function Home() {
                 color="primary"
                 variant="light"
                 as={Link}
-                href="/forgot"
+                href="/forget-password"
               >
                 Esqueceu sua senha?
               </Button>
