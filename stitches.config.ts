@@ -16,7 +16,7 @@ export const { theme, styled, getCssText, keyframes, createTheme } =
 
         icons: "hsl(206,10%,35%)",
 
-        pallet: "#0056d6",
+        pallet: "rgb(61, 166, 255)",
 
         scrollbar: "#383B41",
         scrollbarThumb: "#5D6069",

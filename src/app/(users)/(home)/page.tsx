@@ -11,7 +11,7 @@ export default function Home() {
 
   function handleSignOut() {
     signOut();
-    push("/");
+    push("/signin");
   }
 
   return (

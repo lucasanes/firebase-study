@@ -11,14 +11,14 @@ export function PublicRoute({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (user) {
-      push("/home");
+      push("/");
     }
     console.log("user", user);
   }, [user, push]);
 
   return (
     <>
-      {!user && user != undefined && children}
+      {((!user && user != undefined) || user == null) && children}
       {!!user && null}
     </>
   );

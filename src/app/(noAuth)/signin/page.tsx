@@ -1,18 +1,14 @@
 "use client";
 
 import PasswordInput from "@/components/passwordInput";
-import {
-  Button,
-  CardFooter,
-  CardHeader,
-  Checkbox,
-  Input,
-} from "@nextui-org/react";
+import { Button, CardHeader, Checkbox, Input } from "@nextui-org/react";
 import {
   browserLocalPersistence,
   browserSessionPersistence,
   signInWithEmailAndPassword,
+  signInWithPopup,
 } from "firebase/auth";
+import { GoogleAuthProvider } from "firebase/auth/web-extension";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -60,6 +56,15 @@ export default function Home() {
         const errorMessage = error.message;
         console.log(`Erro: ${errorCode} - ${errorMessage}`);
       });
+  }
+
+  function handleGoogleSignIn() {
+    signInWithPopup(auth, new GoogleAuthProvider()).then((result) => {
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      const token = credential?.accessToken;
+      const user = result.user;
+      console.log(user, token);
+    });
   }
 
   return (
@@ -112,14 +117,26 @@ export default function Home() {
               </Button>
             </div>
           </S.Body>
-          <CardFooter style={{ gap: "10px" }}>
-            <Button variant="flat" color="danger" as={Link} href="/signup">
-              Cadastrar
-            </Button>
-            <Button variant="flat" color="primary" type="submit">
-              Entrar
-            </Button>
-          </CardFooter>
+          <S.Footer style={{ gap: "10px" }}>
+            <div className="buttons">
+              <Button variant="flat" color="danger" as={Link} href="/signup">
+                Cadastrar
+              </Button>
+              <Button variant="flat" color="primary" type="submit">
+                Entrar
+              </Button>
+            </div>
+            <div className="google">
+              <span>Ou se preferir</span>
+              <Button
+                color="danger"
+                variant="bordered"
+                onClick={handleGoogleSignIn}
+              >
+                Entrar com Google
+              </Button>
+            </div>
+          </S.Footer>
         </form>
       </S.Content>
     </S.Container>
