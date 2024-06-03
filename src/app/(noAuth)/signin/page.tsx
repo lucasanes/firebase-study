@@ -5,10 +5,10 @@ import { Button, CardHeader, Checkbox, Input } from "@nextui-org/react";
 import {
   browserLocalPersistence,
   browserSessionPersistence,
+  GoogleAuthProvider,
   signInWithEmailAndPassword,
   signInWithPopup,
 } from "firebase/auth";
-import { GoogleAuthProvider } from "firebase/auth/web-extension";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -59,12 +59,18 @@ export default function Home() {
   }
 
   function handleGoogleSignIn() {
-    signInWithPopup(auth, new GoogleAuthProvider()).then((result) => {
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      const token = credential?.accessToken;
-      const user = result.user;
-      console.log(user, token);
-    });
+    signInWithPopup(auth, new GoogleAuthProvider())
+      .then((result) => {
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        const token = credential?.accessToken;
+        const user = result.user;
+        console.log(user, token);
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        console.log(`Erro: ${errorCode} - ${errorMessage}`);
+      });
   }
 
   return (
@@ -129,7 +135,7 @@ export default function Home() {
             <div className="google">
               <span>Ou se preferir</span>
               <Button
-                color="danger"
+                color="primary"
                 variant="bordered"
                 onClick={handleGoogleSignIn}
               >
