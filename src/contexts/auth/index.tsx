@@ -6,13 +6,13 @@ import { auth } from "../../../firebase.config";
 
 interface AuthContextProps {
   signOut: () => void;
-  user: User;
-  token: string;
+  user: User | null;
+  token: string | null;
 }
 
 interface DataProps {
-  user: User;
-  token: string;
+  user: User | null;
+  token: string | null;
 }
 
 const AuthContext = createContext<AuthContextProps>({} as AuthContextProps);
@@ -22,7 +22,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   function signOut() {
     auth.signOut();
-    setData({} as DataProps);
+    setData({
+      user: null,
+      token: null,
+    });
   }
 
   useEffect(() => {
@@ -31,6 +34,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setData({
           user: user,
           token: user.refreshToken,
+        });
+      } else {
+        setData({
+          user: null,
+          token: null,
         });
       }
     });

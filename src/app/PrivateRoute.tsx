@@ -11,7 +11,7 @@ export function PrivateRoute({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!user) {
-      push("/");
+      push("/signin");
     }
   }, [user, push]);
 

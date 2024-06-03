@@ -12,7 +12,7 @@ import { PublicRoute } from "./PublicRoute";
 export function Providers({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  const publicPages = ["/", "/signup", "/forget-password"];
+  const publicPages = ["/signin", "/signup", "/forget-password"];
 
   const isPublicPage = publicPages.includes(pathname);
 
