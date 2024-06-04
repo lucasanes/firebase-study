@@ -12,9 +12,13 @@ import { PublicRoute } from "./PublicRoute";
 export function Providers({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  const publicPages = ["/signin", "/signup", "/forget-password"];
+  const noAuthPages = ["/signin", "/signup", "/forget-password"];
 
-  const isPublicPage = publicPages.includes(pathname);
+  const privatePages = ["/"];
+
+  const isNoAuthPage = noAuthPages.includes(pathname);
+
+  const isPrivatePage = privatePages.includes(pathname);
 
   return (
     <AuthProvider>
@@ -33,8 +37,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
           pauseOnHover
           theme="dark"
         />
-        {isPublicPage && <PublicRoute>{children}</PublicRoute>}
-        {!isPublicPage && <PrivateRoute>{children}</PrivateRoute>}
+        {isNoAuthPage && <PublicRoute>{children}</PublicRoute>}
+        {isPrivatePage && <PrivateRoute>{children}</PrivateRoute>}
+        {!isNoAuthPage && !isPrivatePage && children}
       </NextUIProvider>
     </AuthProvider>
   );

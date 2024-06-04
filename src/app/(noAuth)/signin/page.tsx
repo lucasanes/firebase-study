@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { MdOutlineEmail } from "react-icons/md";
+import { toast } from "react-toastify";
 import { auth } from "../../../../firebase.config";
 import * as S from "./styles";
 
@@ -39,6 +40,8 @@ export default function Home() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
+    if (error) return;
+
     if (rememberMe) {
       auth.setPersistence(browserLocalPersistence);
     } else {
@@ -48,13 +51,14 @@ export default function Home() {
     signInWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
         const user = userCredential.user;
+
+        toast.success(`Bem vindo, ${user.displayName}`);
         push("/home");
-        console.log(user);
       })
       .catch((error) => {
         const errorCode = error.code;
         const errorMessage = error.message;
-        console.log(`Erro: ${errorCode} - ${errorMessage}`);
+        toast.error(`Erro: ${errorCode} - ${errorMessage}`);
       });
   }
 
@@ -69,7 +73,7 @@ export default function Home() {
       .catch((error) => {
         const errorCode = error.code;
         const errorMessage = error.message;
-        console.log(`Erro: ${errorCode} - ${errorMessage}`);
+        toast.error(`Erro: ${errorCode} - ${errorMessage}`);
       });
   }
 
