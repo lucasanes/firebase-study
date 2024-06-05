@@ -1,17 +1,20 @@
 "use client";
 
 import PasswordInput from "@/components/passwordInput";
-import { Button, CardHeader } from "@nextui-org/react";
+import { ERROR_MESSAGES } from "@/constants/error";
+import { Button, CardHeader, Spinner } from "@nextui-org/react";
 import { confirmPasswordReset, verifyPasswordResetCode } from "firebase/auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "react-toastify";
 import { auth } from "../../../../firebase.config";
 import * as S from "./styles";
 
-export default function Firebase() {
+export default function ResetPassword() {
   const { push } = useRouter();
+
+  const [isTransition, startTransition] = useTransition();
 
   const [password, setPassword] = useState("");
 
@@ -53,20 +56,26 @@ export default function Firebase() {
     const search = new URLSearchParams(window.location.search);
     const code = search.get("oobCode");
 
-    verifyPasswordResetCode(auth, code!)
-      .then((a) => {
-        confirmPasswordReset(auth, code!, password)
-          .then((a) => {
-            toast.success("Senha redefinida com sucesso!");
-            push("/signin");
-          })
-          .catch((error) => {
-            toast.error(`Error: ${error.code} - ${error.message}`);
-          });
-      })
-      .catch((error) => {
-        toast.error(`Error: ${error.code} - ${error.message}`);
-      });
+    startTransition(async () => {
+      await verifyPasswordResetCode(auth, code!)
+        .then((a) => {
+          confirmPasswordReset(auth, code!, password)
+            .then((a) => {
+              toast.success("Senha redefinida com sucesso!");
+              push("/signin");
+            })
+            .catch((error) => {
+              toast.error(
+                ERROR_MESSAGES[error.code as keyof typeof ERROR_MESSAGES]
+              );
+            });
+        })
+        .catch((error) => {
+          toast.error(
+            ERROR_MESSAGES[error.code as keyof typeof ERROR_MESSAGES]
+          );
+        });
+    });
   }
 
   return (
@@ -78,6 +87,7 @@ export default function Firebase() {
           </CardHeader>
           <S.Body>
             <PasswordInput
+              required
               value={password}
               onValueChange={setPassword}
               onBlur={passwordValidator}
@@ -95,8 +105,13 @@ export default function Firebase() {
               >
                 Voltar
               </Button>
-              <Button variant="flat" color="primary" type="submit">
-                Enviar
+              <Button
+                variant="flat"
+                color="primary"
+                type="submit"
+                disabled={isTransition}
+              >
+                {!isTransition ? "Enviar" : <Spinner />}
               </Button>
             </div>
           </S.Footer>

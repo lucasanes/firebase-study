@@ -1,10 +1,18 @@
 "use client";
 
 import PasswordInput from "@/components/passwordInput";
-import { Button, CardFooter, CardHeader, Input } from "@nextui-org/react";
+import { ERROR_MESSAGES } from "@/constants/error";
+import {
+  Button,
+  CardFooter,
+  CardHeader,
+  Input,
+  Spinner,
+} from "@nextui-org/react";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import { BiUserCircle } from "react-icons/bi";
 import { MdOutlineEmail } from "react-icons/md";
 import { toast } from "react-toastify";
@@ -12,6 +20,10 @@ import { auth } from "../../../../firebase.config";
 import * as S from "./styles";
 
 export default function Home() {
+  const [isTransition, startTransition] = useTransition();
+
+  const { push } = useRouter();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -59,27 +71,34 @@ export default function Home() {
 
     if (error) return;
 
-    createUserWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        const user = userCredential.user;
+    startTransition(async () => {
+      await createUserWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          const user = userCredential.user;
 
-        updateProfile(user, {
-          displayName: name,
-        })
-          .then(() => {
-            toast.success(
-              `Conta criada com sucesso, ${
-                name[0].toUpperCase() + name.slice(1)
-              }`
-            );
+          updateProfile(user, {
+            displayName: name,
           })
-          .catch((error) => {
-            toast.error(`Error: ${error.code} - ${error.message}`);
-          });
-      })
-      .catch((error) => {
-        toast.error(`Error: ${error.code} - ${error.message}`);
-      });
+            .then(() => {
+              toast.success(
+                `Conta criada com sucesso, ${
+                  name[0].toUpperCase() + name.slice(1)
+                }`
+              );
+              push("/signin");
+            })
+            .catch((error) => {
+              toast.error(
+                ERROR_MESSAGES[error.code as keyof typeof ERROR_MESSAGES]
+              );
+            });
+        })
+        .catch((error) => {
+          toast.error(
+            ERROR_MESSAGES[error.code as keyof typeof ERROR_MESSAGES]
+          );
+        });
+    });
   }
 
   return (
@@ -91,7 +110,7 @@ export default function Home() {
           </CardHeader>
           <S.Body>
             <Input
-              isRequired
+              required
               labelPlacement="outside"
               autoComplete="off"
               type="text"
@@ -109,7 +128,7 @@ export default function Home() {
             />
 
             <Input
-              isRequired
+              required
               labelPlacement="outside"
               autoComplete="off"
               type="email"
@@ -123,6 +142,7 @@ export default function Home() {
               placeholder="eu@exemplo.com"
             />
             <PasswordInput
+              required
               value={password}
               onValueChange={setPassword}
               onBlur={passwordValidator}
@@ -134,8 +154,13 @@ export default function Home() {
             <Button variant="flat" color="danger" as={Link} href="/">
               Voltar
             </Button>
-            <Button variant="flat" color="success" type="submit">
-              Cadastrar
+            <Button
+              variant="flat"
+              color="success"
+              type="submit"
+              disabled={isTransition}
+            >
+              {!isTransition ? "Cadastrar" : <Spinner />}
             </Button>
           </CardFooter>
         </form>
