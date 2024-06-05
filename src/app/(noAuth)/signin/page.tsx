@@ -1,7 +1,14 @@
 "use client";
 
 import PasswordInput from "@/components/passwordInput";
-import { Button, CardHeader, Checkbox, Input } from "@nextui-org/react";
+import { ERROR_MESSAGES } from "@/constants/error";
+import {
+  Button,
+  CardHeader,
+  Checkbox,
+  Input,
+  Spinner,
+} from "@nextui-org/react";
 import {
   browserLocalPersistence,
   browserSessionPersistence,
@@ -11,7 +18,7 @@ import {
 } from "firebase/auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { MdOutlineEmail } from "react-icons/md";
 import { toast } from "react-toastify";
 import { auth } from "../../../../firebase.config";
@@ -19,6 +26,7 @@ import * as S from "./styles";
 
 export default function Home() {
   const { push } = useRouter();
+  const [isTransition, startTransition] = useTransition();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -48,33 +56,39 @@ export default function Home() {
       auth.setPersistence(browserSessionPersistence);
     }
 
-    signInWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        const user = userCredential.user;
+    startTransition(async () => {
+      await signInWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          const user = userCredential.user;
 
-        toast.success(`Bem vindo, ${user.displayName}`);
-        push("/home");
-      })
-      .catch((error) => {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        toast.error(`Erro: ${errorCode} - ${errorMessage}`);
-      });
+          toast.success(`Bem vindo, ${user.displayName}`);
+          push("/");
+        })
+        .catch((error) => {
+          toast.error(
+            ERROR_MESSAGES[error.code as keyof typeof ERROR_MESSAGES]
+          );
+        });
+    });
   }
 
   function handleGoogleSignIn() {
-    signInWithPopup(auth, new GoogleAuthProvider())
-      .then((result) => {
-        const credential = GoogleAuthProvider.credentialFromResult(result);
-        const token = credential?.accessToken;
-        const user = result.user;
-        console.log(user, token);
-      })
-      .catch((error) => {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        toast.error(`Erro: ${errorCode} - ${errorMessage}`);
-      });
+    startTransition(async () => {
+      await signInWithPopup(auth, new GoogleAuthProvider())
+        .then((result) => {
+          const credential = GoogleAuthProvider.credentialFromResult(result);
+          const token = credential?.accessToken;
+          const user = result.user;
+          console.log(user, token);
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          toast.error(
+            ERROR_MESSAGES[error.code as keyof typeof ERROR_MESSAGES]
+          );
+        });
+    });
   }
 
   return (
@@ -86,7 +100,7 @@ export default function Home() {
           </CardHeader>
           <S.Body>
             <Input
-              isRequired
+              required
               labelPlacement="outside"
               autoComplete="off"
               type="email"
@@ -99,7 +113,11 @@ export default function Home() {
               errorMessage={error?.input == "email" && error.msg}
               placeholder="eu@exemplo.com"
             />
-            <PasswordInput value={password} onValueChange={setPassword} />
+            <PasswordInput
+              required
+              value={password}
+              onValueChange={setPassword}
+            />
             <div
               style={{
                 margin: "-1rem 0 -.5rem 0",
@@ -132,8 +150,13 @@ export default function Home() {
               <Button variant="flat" color="danger" as={Link} href="/signup">
                 Cadastrar
               </Button>
-              <Button variant="flat" color="primary" type="submit">
-                Entrar
+              <Button
+                variant="flat"
+                color="primary"
+                type="submit"
+                disabled={isTransition}
+              >
+                {!isTransition ? "Entrar" : <Spinner />}
               </Button>
             </div>
             <div className="google">
@@ -142,8 +165,9 @@ export default function Home() {
                 color="primary"
                 variant="bordered"
                 onClick={handleGoogleSignIn}
+                disabled={isTransition}
               >
-                Entrar com Google
+                {!isTransition ? "Entrar com Google" : <Spinner />}
               </Button>
             </div>
           </S.Footer>

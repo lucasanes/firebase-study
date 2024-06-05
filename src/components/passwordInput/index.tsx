@@ -11,7 +11,6 @@ export default function PasswordInput(props: InputProps) {
   return (
     <Input
       {...props}
-      isRequired
       label={props.label ? props.label : "Senha"}
       labelPlacement="outside"
       placeholder={props.placeholder ? props.placeholder : "Digite sua senha"}

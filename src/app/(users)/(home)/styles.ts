@@ -1,6 +1,5 @@
 "use client";
 
-import { Card } from "@nextui-org/react";
 import { styled } from "../../../../stitches.config";
 
 export const Container = styled("div", {
@@ -11,10 +10,14 @@ export const Container = styled("div", {
   background: "$body",
 });
 
-export const Content = styled(Card, {
-  width: "300px",
-  background: "$content",
-  borderRadius: "10px",
+export const Content = styled("div", {
   display: "flex",
   flexDirection: "column",
+  gap: "50px",
+  width: "100%",
+  maxWidth: "400px",
+
+  ".signout": {
+    width: 200,
+  },
 });

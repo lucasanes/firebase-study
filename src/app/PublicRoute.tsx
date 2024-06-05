@@ -1,13 +1,13 @@
 "use client";
 
-import { useAuth } from "@/contexts/auth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { auth } from "../../firebase.config";
 
 export function PublicRoute({ children }: { children: React.ReactNode }) {
   const { push } = useRouter();
 
-  const { user } = useAuth();
+  const user = auth.currentUser!;
 
   useEffect(() => {
     if (user) {
