@@ -2,14 +2,17 @@
 
 import { GlobalStyles } from "@/styles/global";
 import { NextUIProvider } from "@nextui-org/react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { PrivateRoute } from "./PrivateRoute";
-import { PublicRoute } from "./PublicRoute";
+import { auth } from "../../firebase.config";
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  const [loading, setLoading] = useState(true);
+
   const pathname = usePathname();
+  const { push } = useRouter();
 
   const noAuthPages = ["/signin", "/signup", "/forget-password"];
 
@@ -18,6 +21,23 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const isNoAuthPage = noAuthPages.includes(pathname);
 
   const isPrivatePage = privatePages.includes(pathname);
+
+  useEffect(() => {
+    auth.onAuthStateChanged((user) => {
+      console.log(user);
+      if (user && isNoAuthPage) {
+        push("/");
+        setLoading(false);
+        return;
+      }
+      if (!user && isPrivatePage) {
+        push("/signin");
+        setLoading(false);
+        return;
+      }
+      setLoading(false);
+    });
+  }, []);
 
   return (
     <NextUIProvider>
@@ -35,9 +55,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         pauseOnHover
         theme="dark"
       />
-      {isNoAuthPage && <PublicRoute>{children}</PublicRoute>}
-      {isPrivatePage && <PrivateRoute>{children}</PrivateRoute>}
-      {!isNoAuthPage && !isPrivatePage && children}
+      {!loading && children}
     </NextUIProvider>
   );
 }

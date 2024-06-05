@@ -14,6 +14,8 @@ export default function Firebase() {
     const search = new URLSearchParams(window.location.search);
     const code = search.get("oobCode");
 
+    if (!code) push("/");
+
     const actions = {
       VERIFY_EMAIL: "verify-email",
       PASSWORD_RESET: "reset-password",

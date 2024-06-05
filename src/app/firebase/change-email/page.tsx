@@ -1,7 +1,5 @@
 "use client";
 
-import CardComponent from "@/components/cardVerified/page";
-import PasswordInput from "@/components/passwordInput";
 import { ERROR_MESSAGES } from "@/constants/error";
 import {
   Button,
@@ -12,7 +10,7 @@ import {
   Input,
   Spinner,
 } from "@nextui-org/react";
-import { updatePassword, verifyBeforeUpdateEmail } from "firebase/auth";
+import { updateEmail } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { MdOutlineEmail } from "react-icons/md";
@@ -20,13 +18,12 @@ import { toast } from "react-toastify";
 import { auth } from "../../../../firebase.config";
 import * as S from "./styles";
 
-export default function Home() {
+export default function ChangeEmail() {
   const { push } = useRouter();
 
   const [isTransition, startTransition] = useTransition();
 
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
 
   const [error, setError] = useState<{ msg: string; input: string } | null>(
     null
@@ -40,56 +37,19 @@ export default function Home() {
     setError(null);
   }
 
-  function passwordValidator() {
-    if (password && password.length < 8) {
-      setError({
-        msg: "A senha deve ter no mínimo 8 caracteres.",
-        input: "password",
-      });
-      return;
-    } else if (password && password.length > 20) {
-      setError({
-        msg: "A senha deve ter no máximo 20 caracteres.",
-        input: "password",
-      });
-      return;
-    } else if (
-      password &&
-      !password.match(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/)
-    ) {
-      setError({
-        msg: "A senha deve conter pelo menos uma letra maiúscula, uma letra minúscula e um número.",
-        input: "password",
-      });
-      return;
-    }
-    setError(null);
-  }
-
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
     if (error) return;
 
-    if (!email && !password) return;
+    if (!email) return;
 
     startTransition(async () => {
-      if (email.length > 0 && email !== auth.currentUser?.email) {
-        await verifyBeforeUpdateEmail(auth.currentUser!, email)
+      if (email.length > 0) {
+        await updateEmail(auth.currentUser!, email)
           .then(() => {
             toast.success("Email atualizado com sucesso.");
-          })
-          .catch((error) => {
-            toast.error(
-              ERROR_MESSAGES[error.code as keyof typeof ERROR_MESSAGES]
-            );
-          });
-      }
-
-      if (password.length > 0) {
-        await updatePassword(auth.currentUser!, password)
-          .then(() => {
-            toast.success("Senha atualizada com sucesso.");
+            push("/");
           })
           .catch((error) => {
             toast.error(
@@ -100,16 +60,9 @@ export default function Home() {
     });
   }
 
-  function handleSignOut() {
-    auth.signOut();
-    push("/signin");
-  }
-
   return (
     <S.Container>
       <S.Content>
-        <h1>Olá, {auth.currentUser?.displayName}</h1>
-        {!auth.currentUser?.emailVerified && <CardComponent />}
         <Card style={{ width: "300px" }}>
           <form onSubmit={handleSubmit}>
             <CardHeader>
@@ -129,13 +82,6 @@ export default function Home() {
                 errorMessage={error?.input == "email" && error.msg}
                 placeholder="eu@exemplo.com"
               />
-              <PasswordInput
-                value={password}
-                onValueChange={setPassword}
-                onBlur={passwordValidator}
-                isInvalid={error?.input == "password"}
-                errorMessage={error?.input == "password" && error.msg}
-              />
             </CardBody>
             <CardFooter>
               <Button
@@ -149,14 +95,6 @@ export default function Home() {
             </CardFooter>
           </form>
         </Card>
-        <Button
-          className="signout"
-          variant="flat"
-          color="danger"
-          onPress={handleSignOut}
-        >
-          Desconectar
-        </Button>
       </S.Content>
     </S.Container>
   );
