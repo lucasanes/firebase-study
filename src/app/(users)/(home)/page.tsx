@@ -3,6 +3,8 @@
 import CardComponent from "@/components/cardVerified/page";
 import PasswordInput from "@/components/passwordInput";
 import { ERROR_MESSAGES } from "@/constants/error";
+import { phoneMask } from "@/utils/masks";
+import { validatorCel } from "@/utils/validators";
 import {
   Button,
   Card,
@@ -12,9 +14,18 @@ import {
   Input,
   Spinner,
 } from "@nextui-org/react";
-import { updatePassword, verifyBeforeUpdateEmail } from "firebase/auth";
+import {
+  multiFactor,
+  PhoneAuthProvider,
+  PhoneMultiFactorGenerator,
+  RecaptchaVerifier,
+  updatePassword,
+  updatePhoneNumber,
+  verifyBeforeUpdateEmail,
+} from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { FormEvent, useState, useTransition } from "react";
+import { BiPhone } from "react-icons/bi";
 import { MdOutlineEmail } from "react-icons/md";
 import { toast } from "react-toastify";
 import { auth } from "../../../../firebase.config";
@@ -27,6 +38,9 @@ export default function Home() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+
+  const [verificationCode, setVerificationCode] = useState("");
 
   const [error, setError] = useState<{ msg: string; input: string } | null>(
     null
@@ -66,6 +80,14 @@ export default function Home() {
     setError(null);
   }
 
+  function phoneValidator() {
+    if (phoneNumber && !validatorCel(phoneNumber)) {
+      setError({ msg: "Informe um número válido.", input: "phone" });
+      return;
+    }
+    setError(null);
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -77,7 +99,7 @@ export default function Home() {
       if (email.length > 0 && email !== auth.currentUser?.email) {
         await verifyBeforeUpdateEmail(auth.currentUser!, email)
           .then(() => {
-            toast.success("Email atualizado com sucesso.");
+            toast.success("Verificação para novo Email enviada com sucesso.");
           })
           .catch((error) => {
             toast.error(
@@ -100,6 +122,74 @@ export default function Home() {
     });
   }
 
+  function handle2FA(e: FormEvent) {
+    e.preventDefault();
+
+    const recaptchaVerifier = new RecaptchaVerifier(
+      auth,
+      "recaptcha-container",
+      {
+        size: "invisible",
+      }
+    );
+
+    recaptchaVerifier.render();
+
+    startTransition(async () => {
+      const provider = new PhoneAuthProvider(auth);
+
+      await provider
+        .verifyPhoneNumber(`+55${phoneNumber}`, recaptchaVerifier)
+        .then(async (verifyResult) => {
+          const phoneCredential = PhoneAuthProvider.credential(
+            verifyResult,
+            "000000"
+          );
+          await updatePhoneNumber(auth.currentUser!, phoneCredential);
+
+          const multiFactorAssertion =
+            PhoneMultiFactorGenerator.assertion(phoneCredential);
+
+          multiFactor(auth.currentUser!)
+            .enroll(multiFactorAssertion)
+            .then(() => {
+              toast.success("2FA ativado com sucesso.");
+            })
+            .catch((error) => {
+              recaptchaVerifier.clear();
+              console.log(error);
+              toast.error(
+                ERROR_MESSAGES[error.code as keyof typeof ERROR_MESSAGES]
+              );
+            });
+        })
+        .catch((error) => {
+          recaptchaVerifier.clear();
+          console.log(error);
+          toast.error(
+            ERROR_MESSAGES[error.code as keyof typeof ERROR_MESSAGES]
+          );
+        });
+    });
+  }
+
+  function handleDelete() {
+    startTransition(async () => {
+      await auth.currentUser
+        ?.delete()
+        .then(() => {
+          toast.success("Conta deletada com sucesso.");
+          auth.signOut();
+          push("/signin");
+        })
+        .catch((error) => {
+          toast.error(
+            ERROR_MESSAGES[error.code as keyof typeof ERROR_MESSAGES]
+          );
+        });
+    });
+  }
+
   function handleSignOut() {
     auth.signOut();
     push("/signin");
@@ -110,6 +200,7 @@ export default function Home() {
       <S.Content>
         <h1>Olá, {auth.currentUser?.displayName}</h1>
         {!auth.currentUser?.emailVerified && <CardComponent />}
+        <div id="recaptcha-container"></div>
         <Card style={{ width: "300px" }}>
           <form onSubmit={handleSubmit}>
             <CardHeader>
@@ -149,13 +240,59 @@ export default function Home() {
             </CardFooter>
           </form>
         </Card>
+
+        <Card style={{ width: "300px" }}>
+          <form onSubmit={handle2FA}>
+            <CardHeader>
+              <h1>Ativar 2FA</h1>
+            </CardHeader>
+            <CardBody style={{ gap: "20px" }}>
+              <Input
+                required
+                labelPlacement="outside"
+                autoComplete="off"
+                type="phone"
+                label="Número de telefone"
+                value={phoneMask(phoneNumber)}
+                maxLength={15}
+                onValueChange={(e) => setPhoneNumber(e.replace(/\D/g, ""))}
+                // eslint-disable-next-line react/jsx-no-undef
+                startContent={<BiPhone className="pallet" size={20} />}
+                isInvalid={error?.input == "phone"}
+                onBlur={phoneValidator}
+                errorMessage={error?.input == "phone" && error.msg}
+                placeholder="(21) 99999-9999"
+              />
+            </CardBody>
+            <CardFooter>
+              <Button
+                variant="flat"
+                color="primary"
+                type="submit"
+                disabled={isTransition}
+              >
+                {!isTransition ? "Ativar 2FA" : <Spinner />}
+              </Button>
+            </CardFooter>
+          </form>
+        </Card>
+
         <Button
-          className="signout"
+          className="button"
           variant="flat"
           color="danger"
           onPress={handleSignOut}
         >
           Desconectar
+        </Button>
+        <Button
+          className="button"
+          variant="flat"
+          color="danger"
+          onPress={handleDelete}
+          disabled={isTransition}
+        >
+          {!isTransition ? "Deletar conta" : <Spinner />}
         </Button>
       </S.Content>
     </S.Container>

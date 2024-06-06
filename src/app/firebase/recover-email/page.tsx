@@ -16,7 +16,7 @@ export default function VerifyChangedEmail() {
 
     applyActionCode(auth, oobCode!)
       .then(() => {
-        toast.success("Novo Email verificado com sucesso!");
+        toast.success("Email recuperado com sucesso!");
         router.push("/");
       })
       .catch((error) => {

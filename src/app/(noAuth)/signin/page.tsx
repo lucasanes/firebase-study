@@ -2,6 +2,8 @@
 
 import PasswordInput from "@/components/passwordInput";
 import { ERROR_MESSAGES } from "@/constants/error";
+import { phoneMask } from "@/utils/masks";
+import { validatorCel } from "@/utils/validators";
 import {
   Button,
   CardHeader,
@@ -13,12 +15,15 @@ import {
   browserLocalPersistence,
   browserSessionPersistence,
   GoogleAuthProvider,
+  RecaptchaVerifier,
   signInWithEmailAndPassword,
+  signInWithPhoneNumber,
   signInWithPopup,
 } from "firebase/auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { BiPhone } from "react-icons/bi";
 import { MdOutlineEmail } from "react-icons/md";
 import { toast } from "react-toastify";
 import { auth } from "../../../../firebase.config";
@@ -28,7 +33,10 @@ export default function Home() {
   const { push } = useRouter();
   const [isTransition, startTransition] = useTransition();
 
+  const [phoneNumerSignIn, setPhoneNumberSignIn] = useState(false);
+
   const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
 
   const [rememberMe, setRememberMe] = useState(false);
@@ -40,6 +48,14 @@ export default function Home() {
   function emailValidator() {
     if (email && !email.match(/^[a-z0-9.]+@[a-z0-9]+\.[a-z]/)) {
       setError({ msg: "Informe um Email válido.", input: "email" });
+      return;
+    }
+    setError(null);
+  }
+
+  function phoneValidator() {
+    if (phoneNumber && !validatorCel(phoneNumber)) {
+      setError({ msg: "Informe um número válido.", input: "phone" });
       return;
     }
     setError(null);
@@ -57,18 +73,53 @@ export default function Home() {
     }
 
     startTransition(async () => {
-      await signInWithEmailAndPassword(auth, email, password)
-        .then((userCredential) => {
-          const user = userCredential.user;
+      if (!phoneNumerSignIn) {
+        await signInWithEmailAndPassword(auth, email, password)
+          .then((userCredential) => {
+            const user = userCredential.user;
 
-          toast.success(`Bem vindo, ${user.displayName}`);
-          push("/");
-        })
-        .catch((error) => {
-          toast.error(
-            ERROR_MESSAGES[error.code as keyof typeof ERROR_MESSAGES]
-          );
-        });
+            toast.success(`Bem vindo, ${user.displayName}`);
+            push("/");
+          })
+          .catch((error) => {
+            toast.error(
+              ERROR_MESSAGES[error.code as keyof typeof ERROR_MESSAGES]
+            );
+          });
+      } else {
+        const recaptchaVerifier = new RecaptchaVerifier(
+          auth,
+          "recaptcha-container",
+          {
+            size: "invisible",
+          }
+        );
+
+        recaptchaVerifier.render();
+        await signInWithPhoneNumber(
+          auth,
+          `+55${phoneNumber}`,
+          recaptchaVerifier
+        )
+          .then(async (confirmationResult) => {
+            await confirmationResult
+              .confirm("000000")
+              .then(async () => {
+                toast.success(`Bem vindo, ${auth.currentUser?.displayName}.`);
+              })
+              .catch((error) => {
+                toast.error(
+                  ERROR_MESSAGES[error.code as keyof typeof ERROR_MESSAGES]
+                );
+              });
+          })
+          .catch((error) => {
+            console.log(error);
+            toast.error(
+              ERROR_MESSAGES[error.code as keyof typeof ERROR_MESSAGES]
+            );
+          });
+      }
     });
   }
 
@@ -94,25 +145,44 @@ export default function Home() {
   return (
     <S.Container>
       <S.Content>
+        <div id="recaptcha-container"></div>
         <form onSubmit={handleSubmit}>
           <CardHeader>
             <h1>Login</h1>
           </CardHeader>
           <S.Body>
-            <Input
-              required
-              labelPlacement="outside"
-              autoComplete="off"
-              type="email"
-              label="Email"
-              value={email}
-              onValueChange={setEmail}
-              startContent={<MdOutlineEmail className="pallet" size={20} />}
-              isInvalid={error?.input == "email"}
-              onBlur={emailValidator}
-              errorMessage={error?.input == "email" && error.msg}
-              placeholder="eu@exemplo.com"
-            />
+            {!phoneNumerSignIn ? (
+              <Input
+                required
+                labelPlacement="outside"
+                autoComplete="off"
+                type="email"
+                label="Email"
+                value={email}
+                onValueChange={setEmail}
+                startContent={<MdOutlineEmail className="pallet" size={20} />}
+                isInvalid={error?.input == "email"}
+                onBlur={emailValidator}
+                errorMessage={error?.input == "email" && error.msg}
+                placeholder="eu@exemplo.com"
+              />
+            ) : (
+              <Input
+                required
+                labelPlacement="outside"
+                autoComplete="off"
+                type="phone"
+                label="Número de telefone"
+                value={phoneMask(phoneNumber)}
+                maxLength={15}
+                onValueChange={(e) => setPhoneNumber(e.replace(/\D/g, ""))}
+                startContent={<BiPhone className="pallet" size={20} />}
+                isInvalid={error?.input == "phone"}
+                onBlur={phoneValidator}
+                errorMessage={error?.input == "phone" && error.msg}
+                placeholder="(21) 99999-9999"
+              />
+            )}
             <PasswordInput
               required
               value={password}
@@ -160,11 +230,17 @@ export default function Home() {
               </Button>
             </div>
             <div className="google">
-              <span>Ou se preferir</span>
               <Button
                 color="primary"
                 variant="bordered"
-                onClick={handleGoogleSignIn}
+                onPress={() => setPhoneNumberSignIn(!phoneNumerSignIn)}
+              >
+                {!phoneNumerSignIn ? "Entrar com número" : "Entrar com Email"}
+              </Button>
+              <Button
+                color="primary"
+                variant="bordered"
+                onPress={handleGoogleSignIn}
                 disabled={isTransition}
               >
                 {!isTransition ? "Entrar com Google" : <Spinner />}

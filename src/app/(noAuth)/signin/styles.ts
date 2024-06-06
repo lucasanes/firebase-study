@@ -36,11 +36,13 @@ export const Footer = styled(CardFooter, {
   },
 
   ".google": {
+    width: "100%",
     marginTop: "30px",
     marginLeft: "5px",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    gap: "10px",
+    flexDirection: "column",
+    gap: "20px",
   },
 });

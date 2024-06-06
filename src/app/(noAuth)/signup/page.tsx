@@ -151,7 +151,7 @@ export default function Home() {
             />
           </S.Body>
           <CardFooter style={{ gap: "10px" }}>
-            <Button variant="flat" color="danger" as={Link} href="/">
+            <Button variant="flat" color="danger" as={Link} href="/signin">
               Voltar
             </Button>
             <Button
