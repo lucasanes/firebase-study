@@ -18,8 +18,7 @@ export default function RootLayout({
         style={{
           height: "100vh",
           width: "100vw",
-          overflow: "hidden",
-          position: "fixed",
+          overflow: "hidden auto",
         }}
       >
         <Providers>{children}</Providers>

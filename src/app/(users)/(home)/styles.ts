@@ -3,11 +3,12 @@
 import { styled } from "../../../../stitches.config";
 
 export const Container = styled("div", {
+  minHeight: "100vh",
+  background: "$body",
   display: "flex",
   justifyContent: "center",
-  alignItems: "center",
-  height: "100vh",
-  background: "$body",
+  alignItems: "flex-start",
+  padding: "50px 0",
 });
 
 export const Content = styled("div", {
@@ -17,7 +18,7 @@ export const Content = styled("div", {
   width: "100%",
   maxWidth: "400px",
 
-  ".signout": {
+  ".button": {
     width: 200,
   },
 });
